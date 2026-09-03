@@ -5,9 +5,9 @@ import Workbench from './components/Workbench'
 import Preview from './components/Preview'
 import SettingsModal from './components/SettingsModal'
 
-const TAB_LABELS: { type: ReportType; icon: string; label: string }[] = [
+const TAB_CONFIG: { type: ReportType; icon: string; label: string }[] = [
   { type: 'daily', icon: '📅', label: '日报' },
-  { type: 'weekly', icon: '📋', label: '周报' },
+  { type: 'weekly', icon: '📁', label: '周报' },
   { type: 'monthly', icon: '📊', label: '月报' },
 ]
 
@@ -27,7 +27,7 @@ function saveSettings(s: Settings) {
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [showSettings, setShowSettings] = useState(false)
-  const [reportType, setReportType] = useState<ReportType>('weekly')
+  const [reportType, setReportType] = useState<ReportType>('daily')
   const [generated, setGenerated] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -45,26 +45,27 @@ export default function App() {
         hasApiKey={!!settings.apiKey}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6 flex flex-col gap-4">
+      <main className="flex-1 max-w-[1280px] w-full mx-auto px-6 py-5 flex flex-col gap-5">
         {/* 报告类型切换 */}
-        <div className="flex gap-2">
-          {TAB_LABELS.map((tab) => (
+        <div className="flex gap-3">
+          {TAB_CONFIG.map((tab) => (
             <button
               key={tab.type}
               onClick={() => setReportType(tab.type)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${
                 reportType === tab.type
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-white text-text-secondary hover:bg-gray-100 border border-border'
+                  ? 'bg-primary text-white shadow-md shadow-primary/20'
+                  : 'bg-white text-text-secondary hover:bg-primary-50 border border-border'
               }`}
             >
-              {tab.icon} {tab.label}
+              <span className="text-base">{tab.icon}</span>
+              {tab.label}
             </button>
           ))}
         </div>
 
         {/* 工作台 + 预览 */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 min-h-0">
           <Workbench
             reportType={reportType}
             apiKey={settings.apiKey}
@@ -76,7 +77,14 @@ export default function App() {
             onGenerateEnd={() => setLoading(false)}
             onNeedApiKey={() => setShowSettings(true)}
           />
-          <Preview content={generated} loading={loading} />
+          <Preview
+            content={generated}
+            loading={loading}
+            reportType={reportType}
+            onRegenerate={() => {
+              // 触发重新生成的信号
+            }}
+          />
         </div>
       </main>
 
