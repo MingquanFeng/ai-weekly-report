@@ -79,7 +79,6 @@ function buildUserMessage(
   return lines.join('\n')
 }
 
-/** 根据 provider 获取实际请求 URL */
 function getApiUrl(provider: ProviderConfig): string {
   const base = import.meta.env.DEV
     ? `/api/${provider.id}`
@@ -87,9 +86,47 @@ function getApiUrl(provider: ProviderConfig): string {
   return `${base}/chat/completions`
 }
 
-/** 获取模型名称 */
 function getModel(provider: ProviderConfig): string {
   return provider.model
+}
+
+/** 从 SSE 行中提取 content，兼容多种格式 */
+function extractContent(line: string): string | null {
+  // 标准 SSE: "data: {...}"
+  if (line.startsWith('data: ')) {
+    const data = line.slice(6).trim()
+    if (data === '[DONE]') return null // signal done
+    try {
+      const json = JSON.parse(data)
+      return json.choices?.[0]?.delta?.content ?? null
+    } catch {
+      return null
+    }
+  }
+
+  // 无空格: "data:{...}"
+  if (line.startsWith('data:')) {
+    const data = line.slice(5).trim()
+    if (data === '[DONE]') return null
+    try {
+      const json = JSON.parse(data)
+      return json.choices?.[0]?.delta?.content ?? null
+    } catch {
+      return null
+    }
+  }
+
+  // 裸 JSON 行（部分厂商不带 data: 前缀）
+  if (line.startsWith('{')) {
+    try {
+      const json = JSON.parse(line)
+      return json.choices?.[0]?.delta?.content ?? null
+    } catch {
+      return null
+    }
+  }
+
+  return null
 }
 
 export async function generateReport(
@@ -107,7 +144,6 @@ export async function generateReport(
   const url = getApiUrl(provider)
   const userMessage = buildUserMessage(items, plan, issues, summary, reportType, dateStr)
 
-  // MiMo 使用 api-key 头，其他厂商用 Authorization: Bearer
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(providerId === 'mimo'
@@ -115,22 +151,46 @@ export async function generateReport(
       : { Authorization: `Bearer ${apiKey}` }),
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: getModel(provider),
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPTS[reportType] },
-        { role: 'user', content: userMessage },
-      ],
-      stream: true,
-    }),
-  })
+  let response: Response
+  try {
+    response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: getModel(provider),
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPTS[reportType] },
+          { role: 'user', content: userMessage },
+        ],
+        stream: true,
+      }),
+    })
+  } catch (e) {
+    throw new Error(`网络请求失败: ${(e as Error).message}。请检查网络或 API 设置。`)
+  }
 
   if (!response.ok) {
     const err = await response.text()
     throw new Error(`API 请求失败 (${response.status}): ${err}`)
+  }
+
+  const contentType = response.headers.get('content-type') || ''
+
+  // 如果不是 SSE 流，按非流式处理
+  if (!contentType.includes('text/event-stream') && !contentType.includes('application/json')) {
+    const text = await response.text()
+    try {
+      const json = JSON.parse(text)
+      const content = json.choices?.[0]?.message?.content
+      if (content) {
+        onChunk(content)
+        return
+      }
+    } catch {
+      // not JSON, show raw
+    }
+    onChunk(text)
+    return
   }
 
   const reader = response.body!.getReader()
@@ -145,18 +205,23 @@ export async function generateReport(
     const lines = buffer.split('\n')
     buffer = lines.pop() || ''
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6)
-        if (data === '[DONE]') return
-        try {
-          const json = JSON.parse(data)
-          const content = json.choices?.[0]?.delta?.content
-          if (content) onChunk(content)
-        } catch {
-          // skip malformed JSON
-        }
+    for (const rawLine of lines) {
+      const line = rawLine.trim()
+      if (!line) continue
+
+      const content = extractContent(line)
+      if (content === null) {
+        // 可能是 [DONE]
+        if (line.includes('[DONE]')) return
+        continue
       }
+      onChunk(content)
     }
+  }
+
+  // 处理 buffer 中残留的内容
+  if (buffer.trim()) {
+    const content = extractContent(buffer.trim())
+    if (content) onChunk(content)
   }
 }

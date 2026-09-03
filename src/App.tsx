@@ -77,7 +77,7 @@ export default function App() {
               setLoading(true)
               setGenerated('')
             }}
-            onChunk={setGenerated}
+            onChunk={(chunk) => setGenerated((prev) => prev + chunk)}
             onGenerateEnd={() => setLoading(false)}
             onNeedApiKey={() => setShowSettings(true)}
           />
