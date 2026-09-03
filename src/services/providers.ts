@@ -69,9 +69,9 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     id: 'mimo',
     name: '小米 MiMo',
     icon: '📱',
-    endpoint: 'https://api.mimo.xiaomi.com/v1',
-    model: 'mimo-v2-flash',
-    placeholder: '输入 API Key...',
+    endpoint: 'https://api.xiaomimimo.com/v1',
+    model: 'mimo-v2.5',
+    placeholder: 'sk-...',
   },
 }
 

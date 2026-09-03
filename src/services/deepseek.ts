@@ -107,12 +107,17 @@ export async function generateReport(
   const url = getApiUrl(provider)
   const userMessage = buildUserMessage(items, plan, issues, summary, reportType, dateStr)
 
+  // MiMo 使用 api-key 头，其他厂商用 Authorization: Bearer
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(providerId === 'mimo'
+      ? { 'api-key': apiKey }
+      : { Authorization: `Bearer ${apiKey}` }),
+  }
+
   const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
+    headers,
     body: JSON.stringify({
       model: getModel(provider),
       messages: [
