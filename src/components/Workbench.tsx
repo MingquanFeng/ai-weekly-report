@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import type { ReportType, WorkItem, WorkItemType } from '../types'
+import type { ProviderId, ReportType, WorkItem, WorkItemType } from '../types'
 import { generateReport } from '../services/deepseek'
 
 interface Props {
   reportType: ReportType
+  providerId: ProviderId
   apiKey: string
   onGenerateStart: () => void
   onChunk: (text: string) => void
@@ -21,6 +22,7 @@ const SECTION_CONFIG = {
 
 export default function Workbench({
   reportType,
+  providerId,
   apiKey,
   onGenerateStart,
   onChunk,
@@ -62,6 +64,7 @@ export default function Workbench({
     onGenerateStart()
     try {
       await generateReport(
+        providerId,
         apiKey,
         reportType,
         filled.map((it) => ({ text: it.text, type: it.type })),

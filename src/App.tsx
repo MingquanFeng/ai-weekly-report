@@ -11,12 +11,16 @@ const TAB_CONFIG: { type: ReportType; icon: string; label: string }[] = [
   { type: 'monthly', icon: '📊', label: '月报' },
 ]
 
+const DEFAULT_SETTINGS: Settings = { provider: 'deepseek', apiKey: '' }
+
 function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem('settings')
-    return raw ? JSON.parse(raw) : { apiKey: '' }
+    if (!raw) return DEFAULT_SETTINGS
+    const parsed = JSON.parse(raw)
+    return { ...DEFAULT_SETTINGS, ...parsed }
   } catch {
-    return { apiKey: '' }
+    return DEFAULT_SETTINGS
   }
 }
 
@@ -31,8 +35,7 @@ export default function App() {
   const [generated, setGenerated] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSaveSettings = (key: string) => {
-    const next = { apiKey: key }
+  const handleSaveSettings = (next: Settings) => {
     setSettings(next)
     saveSettings(next)
     setShowSettings(false)
@@ -68,6 +71,7 @@ export default function App() {
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 min-h-0">
           <Workbench
             reportType={reportType}
+            providerId={settings.provider}
             apiKey={settings.apiKey}
             onGenerateStart={() => {
               setLoading(true)
@@ -81,16 +85,14 @@ export default function App() {
             content={generated}
             loading={loading}
             reportType={reportType}
-            onRegenerate={() => {
-              // 触发重新生成的信号
-            }}
+            onRegenerate={() => {}}
           />
         </div>
       </main>
 
       {showSettings && (
         <SettingsModal
-          currentKey={settings.apiKey}
+          currentSettings={settings}
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
         />

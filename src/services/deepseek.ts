@@ -1,4 +1,5 @@
-import type { ReportType } from '../types'
+import type { ProviderConfig, ProviderId, ReportType } from '../types'
+import { PROVIDERS } from './providers'
 
 const SYSTEM_PROMPTS: Record<ReportType, string> = {
   daily: `你是一个专业的日报撰写助手。根据用户提供的零散工作记录，生成一份结构清晰、措辞专业的日报。
@@ -78,7 +79,21 @@ function buildUserMessage(
   return lines.join('\n')
 }
 
+/** 根据 provider 获取实际请求 URL */
+function getApiUrl(provider: ProviderConfig): string {
+  const base = import.meta.env.DEV
+    ? `/api/${provider.id}`
+    : provider.endpoint
+  return `${base}/chat/completions`
+}
+
+/** 获取模型名称 */
+function getModel(provider: ProviderConfig): string {
+  return provider.model
+}
+
 export async function generateReport(
+  providerId: ProviderId,
   apiKey: string,
   reportType: ReportType,
   items: { text: string; type: string }[],
@@ -88,16 +103,18 @@ export async function generateReport(
   dateStr: string,
   onChunk: (text: string) => void
 ): Promise<void> {
+  const provider = PROVIDERS[providerId]
+  const url = getApiUrl(provider)
   const userMessage = buildUserMessage(items, plan, issues, summary, reportType, dateStr)
 
-  const response = await fetch('/api/deepseek/chat/completions', {
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: getModel(provider),
       messages: [
         { role: 'system', content: SYSTEM_PROMPTS[reportType] },
         { role: 'user', content: userMessage },
