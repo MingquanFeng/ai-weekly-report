@@ -6,121 +6,60 @@
 
 ## ✨ 功能
 
-- 📅 **日报** — 每天下班前 1 分钟记录，AI 帮你写成规范日报
-- 📋 **周报** — 每周五汇总一周工作，AI 自动提炼重点
-- 📊 **月报** — 每月底回顾整月工作，AI 归纳成果和规划
-- 🔀 **类型切换** — 顶部 Tab 一键切换，表单字段随类型联动
+- 📅 **日报** / 📋 **周报** / 📊 **月报** — 顶部 Tab 一键切换
 - ⚡ **流式生成** — SSE 实时输出，边生成边预览
+- 🗄️ **SQLite 持久化** — 报告自动保存，支持历史查看和删除
+- 🤖 **9 家国产模型** — DeepSeek / 通义千问 / 智谱AI / Moonshot / 讯飞星火 / 腾讯混元 / 文心一言 / MiniMax / 小米MiMo
 - 📋 **一键复制 / 下载** — 导出 Markdown 格式
-- 🔐 **API Key 本地存储** — 仅存浏览器本地，不上传任何服务器
+- 🔐 **API Key 本地存储** — 仅存浏览器本地
 
 ## 🛠️ 技术栈
 
 | 技术 | 用途 |
 |------|------|
-| React + TypeScript | 前端框架 |
+| Next.js 16 | 全栈框架（App Router） |
+| React 19 | 前端 UI |
+| TypeScript | 类型安全 |
 | Tailwind CSS v4 | 样式 |
-| Vite | 构建工具 |
-| DeepSeek API | AI 生成（SSE 流式） |
+| better-sqlite3 | 服务端 SQLite 持久化 |
+| AI APIs | SSE 流式生成（9 家国产模型） |
 
 ## 🚀 快速开始
 
-### 1. 安装依赖
-
 ```bash
 npm install
-```
-
-### 2. 启动开发服务器
-
-```bash
 npm run dev
 ```
 
-浏览器打开 http://localhost:5173/
-
-### 3. 配置 API Key
-
-首次使用点击右上角 **⚙️ 设置**，填入你的 [DeepSeek API Key](https://platform.deepseek.com/api_keys)。
-
-### 4. 生成报告
-
-1. 选择报告类型（日报 / 周报 / 月报）
-2. 输入工作内容（支持多条，可标注类型）
-3. 点击「✨ 生成」
-4. 右侧实时预览，一键复制或下载
+浏览器打开 http://localhost:3000
 
 ## 📁 项目结构
 
 ```
 ├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── ai/[provider]/route.ts   # AI 代理（解决 CORS）
+│   │   │   └── reports/route.ts         # 报告 CRUD
+│   │   ├── page.tsx                     # 主页面
+│   │   └── layout.tsx
 │   ├── components/
-│   │   ├── Header.tsx          # 顶栏
-│   │   ├── Workbench.tsx       # 工作台（输入区）
-│   │   ├── Preview.tsx         # 报告预览（输出区）
-│   │   └── SettingsModal.tsx   # API Key 设置弹窗
+│   │   ├── Header.tsx
+│   │   ├── Workbench.tsx                # 输入区
+│   │   ├── Preview.tsx                  # 预览区
+│   │   ├── SettingsModal.tsx            # 设置弹窗
+│   │   └── HistoryList.tsx              # 历史报告
 │   ├── services/
-│   │   └── deepseek.ts         # DeepSeek API 调用 + Prompt
-│   ├── types/
-│   │   └── index.ts            # 类型定义
-│   ├── App.tsx                 # 主应用
-│   └── main.tsx                # 入口
-├── index.html
-├── vite.config.ts
+│   │   ├── ai.ts                        # AI 调用
+│   │   ├── providers.ts                 # 厂商配置
+│   │   └── reports.ts                   # 报告 API
+│   ├── lib/
+│   │   └── db.ts                        # SQLite 初始化
+│   └── types/
+│       └── index.ts
+├── data/
+│   └── reports.db                       # SQLite 数据库（自动创建）
 └── package.json
-```
-
-## 📝 报告模板
-
-### 日报
-
-```markdown
-# 日报 — 2025-01-15（周三）
-
-## 今日完成
-- 完成用户登录模块开发和单元测试
-
-## 进行中
-- 订单模块接口联调（进度 70%）
-
-## 明日计划
-- 完成订单模块联调
-- 开始支付模块开发
-```
-
-### 周报
-
-```markdown
-# 周报 — 2025年第03周
-
-## 本周完成
-- 用户模块全部功能开发完毕
-- 完成 3 次代码评审
-
-## 进行中
-- 订单模块开发
-
-## 下周计划
-- 订单模块上线
-- 启动支付模块
-```
-
-### 月报
-
-```markdown
-# 月报 — 2025年1月
-
-## 本月成果
-- 用户模块从零到上线，覆盖注册/登录/权限
-- 系统响应时间优化 40%
-
-## 重点项目进展
-- 用户系统：✅ 已上线
-- 订单系统：进行中，预计 2 月中旬上线
-
-## 下月计划
-- 完成订单系统上线
-- 启动支付系统设计
 ```
 
 ## 📄 License

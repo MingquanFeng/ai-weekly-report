@@ -1,17 +1,9 @@
 export type ReportType = 'daily' | 'weekly' | 'monthly'
-
 export type WorkItemType = '开发' | '会议' | '文档' | '其他'
 
 export type ProviderId =
-  | 'deepseek'
-  | 'qwen'
-  | 'zhipu'
-  | 'moonshot'
-  | 'spark'
-  | 'hunyuan'
-  | 'ernie'
-  | 'minimax'
-  | 'mimo'
+  | 'deepseek' | 'qwen' | 'zhipu' | 'moonshot'
+  | 'spark' | 'hunyuan' | 'ernie' | 'minimax' | 'mimo'
 
 export interface ProviderConfig {
   id: ProviderId
@@ -20,6 +12,7 @@ export interface ProviderConfig {
   endpoint: string
   model: string
   placeholder: string
+  authHeader: string
 }
 
 export interface WorkItem {
@@ -28,16 +21,21 @@ export interface WorkItem {
   type: WorkItemType
 }
 
-export interface ReportInput {
-  type: ReportType
-  date: string
-  items: WorkItem[]
-  plan: string
-  issues: string
-  summary: string
-}
-
 export interface Settings {
   provider: ProviderId
   apiKey: string
+}
+
+export interface Report {
+  id: number
+  type: ReportType
+  title: string
+  content: string
+  items: string
+  plan: string
+  issues: string
+  summary: string
+  provider: string
+  created_at: string
+  updated_at: string
 }
