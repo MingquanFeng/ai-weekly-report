@@ -11,6 +11,7 @@ export type ProviderId =
   | 'hunyuan'
   | 'ernie'
   | 'minimax'
+  | 'mimo'
 
 export interface ProviderConfig {
   id: ProviderId

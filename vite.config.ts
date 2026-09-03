@@ -12,6 +12,7 @@ const providers = [
   { id: 'hunyuan', target: 'https://api.hunyuan.cloud.tencent.com/v1' },
   { id: 'ernie', target: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop' },
   { id: 'minimax', target: 'https://api.minimax.chat/v1' },
+  { id: 'mimo', target: 'https://api.mimo.xiaomi.com/v1' },
 ]
 
 const proxy: Record<string, object> = {}

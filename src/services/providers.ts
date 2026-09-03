@@ -65,6 +65,14 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
     model: 'MiniMax-Text-01',
     placeholder: '输入 API Key...',
   },
+  mimo: {
+    id: 'mimo',
+    name: '小米 MiMo',
+    icon: '📱',
+    endpoint: 'https://api.mimo.xiaomi.com/v1',
+    model: 'mimo-v2-flash',
+    placeholder: '输入 API Key...',
+  },
 }
 
 export const PROVIDER_LIST = Object.values(PROVIDERS)
