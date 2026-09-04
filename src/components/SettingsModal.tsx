@@ -5,8 +5,20 @@ import { PROVIDER_LIST } from '@/services/providers'
 
 export default function SettingsModal({ current, onSave, onClose }: { current: Settings; onSave: (s: Settings) => void; onClose: () => void }) {
   const [provider, setProvider] = useState<ProviderId>(current.provider)
-  const [apiKey, setApiKey] = useState(current.apiKey)
+  const [apiKeys, setApiKeys] = useState<Partial<Record<ProviderId, string>>>(current.apiKeys || {})
+  const currentKey = apiKeys[provider] || ''
   const cp = PROVIDER_LIST.find(p => p.id === provider)!
+
+  const setKey = (key: string) => setApiKeys(prev => ({ ...prev, [provider]: key }))
+
+  const handleSave = () => {
+    const merged: Settings = {
+      provider,
+      apiKey: apiKeys[provider] || '',
+      apiKeys,
+    }
+    onSave(merged)
+  }
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
@@ -23,13 +35,13 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
           ))}
         </div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">{cp.name} API Key</label>
-        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder={cp.placeholder}
+        <input type="password" value={currentKey} onChange={e => setKey(e.target.value)} placeholder={cp.placeholder}
           className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 mb-2 transition-colors" />
         <p className="text-xs text-gray-400 mb-1">模型：{cp.model}</p>
         <p className="text-xs text-gray-400 mb-5">🔒 Key 仅存储在浏览器本地</p>
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="px-5 py-2.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer">取消</button>
-          <button onClick={() => onSave({ provider, apiKey })} className="px-5 py-2.5 text-sm font-medium rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-colors cursor-pointer">保存</button>
+          <button onClick={handleSave} className="px-5 py-2.5 text-sm font-medium rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-colors cursor-pointer">保存</button>
         </div>
       </div>
     </div>

@@ -2,52 +2,57 @@ import { NextRequest } from 'next/server'
 import { PROVIDERS } from '@/services/providers'
 import type { ProviderId } from '@/types'
 
-const PROVIDER_ENDPOINTS: Record<string, string> = {}
-Object.values(PROVIDERS).forEach(p => { PROVIDER_ENDPOINTS[p.id] = p.endpoint })
+const ENDPOINTS: Record<string, string> = {}
+Object.values(PROVIDERS).forEach(p => { ENDPOINTS[p.id] = p.endpoint })
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ provider: string }> }
 ) {
   const { provider } = await params
-  const targetBase = PROVIDER_ENDPOINTS[provider]
-  if (!targetBase) {
-    return Response.json({ error: `未知厂商: ${provider}` }, { status: 400 })
-  }
+  const base = ENDPOINTS[provider]
+  if (!base) return Response.json({ error: '未知厂商' }, { status: 400 })
 
   const apiKey = req.headers.get('x-api-key') || ''
-  const providerConfig = PROVIDERS[provider as ProviderId]
-  const useApiKeyHeader = providerConfig?.authHeader === 'api-key'
+  const cfg = PROVIDERS[provider as ProviderId]
+  const useApiKey = cfg?.authHeader === 'api-key'
 
   const body = await req.json()
 
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 120_000) // 2 分钟超时
+
+  let upstream: Response
   try {
-    const upstream = await fetch(`${targetBase}/chat/completions`, {
+    upstream = await fetch(`${base}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(useApiKeyHeader
-          ? { 'api-key': apiKey }
-          : { Authorization: `Bearer ${apiKey}` }),
+        ...(useApiKey ? { 'api-key': apiKey } : { Authorization: `Bearer ${apiKey}` }),
       },
       body: JSON.stringify(body),
+      signal: controller.signal,
     })
-
-    if (!upstream.ok) {
-      const err = await upstream.text()
-      return Response.json({ error: `API错误 (${upstream.status}): ${err}` }, { status: upstream.status })
+  } catch (err: unknown) {
+    clearTimeout(timeout)
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      return Response.json({ error: '上游 AI 厂商响应超时' }, { status: 504 })
     }
-
-    const contentType = upstream.headers.get('content-type') || 'text/event-stream'
-
-    return new Response(upstream.body, {
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      },
-    })
-  } catch (e) {
-    return Response.json({ error: `代理请求失败: ${(e as Error).message}` }, { status: 502 })
+    return Response.json({ error: String(err) }, { status: 502 })
   }
+
+  if (!upstream.ok) {
+    clearTimeout(timeout)
+    const err = await upstream.text()
+    return Response.json({ error: err }, { status: upstream.status })
+  }
+
+  // 拿到响应头即清除超时，后续由流本身控制生命周期
+  clearTimeout(timeout)
+
+  // 真流式：直接透传上游的 ReadableStream
+  const stream = upstream.body
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+  })
 }

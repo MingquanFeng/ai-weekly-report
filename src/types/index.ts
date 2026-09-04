@@ -24,6 +24,7 @@ export interface WorkItem {
 export interface Settings {
   provider: ProviderId
   apiKey: string
+  apiKeys: Partial<Record<ProviderId, string>>
 }
 
 export interface Report {

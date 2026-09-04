@@ -3,24 +3,35 @@ import { useState, useEffect } from 'react'
 import type { Report } from '@/types'
 import { listReports, deleteReport } from '@/services/reports'
 
-export default function HistoryList({ onLoad }: { onLoad: (content: string) => void }) {
+const PAGE_SIZE = 7
+
+export default function HistoryList({ refreshKey, onLoad }: { refreshKey: number; onLoad: (content: string, reportId: number) => void }) {
   const [reports, setReports] = useState<Report[]>([])
   const [filter, setFilter] = useState<string>('')
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
 
-  const load = async () => {
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const load = async (p = page) => {
     setLoading(true)
-    const { data } = await listReports(filter || undefined)
-    setReports(data)
+    const res = await listReports(filter || undefined, p, PAGE_SIZE)
+    setReports(res.data)
+    setTotal(res.total)
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [filter])
+  useEffect(() => { setPage(1); load(1) }, [filter, refreshKey])
 
   const handleDelete = async (id: number) => {
     if (!confirm('确定删除这条报告？')) return
     await deleteReport(id)
-    setReports(prev => prev.filter(r => r.id !== id))
+    const nextTotal = total - 1
+    const nextPage = Math.max(1, Math.min(page, Math.ceil(nextTotal / PAGE_SIZE)))
+    setTotal(nextTotal)
+    if (nextPage !== page) { setPage(nextPage); load(nextPage) }
+    else setReports(prev => prev.filter(r => r.id !== id))
   }
 
   const typeLabel = (t: string) => t === 'daily' ? '📅 日报' : t === 'weekly' ? '📋 周报' : '📊 月报'
@@ -50,10 +61,23 @@ export default function HistoryList({ onLoad }: { onLoad: (content: string) => v
               <span className="text-sm">{typeLabel(r.type)}</span>
               <span className="flex-1 text-sm text-gray-700 truncate">{r.title || '未命名'}</span>
               <span className="text-xs text-gray-400 shrink-0">{r.created_at?.slice(0, 10)}</span>
-              <button onClick={() => onLoad(r.content)} className="opacity-0 group-hover:opacity-100 text-xs text-violet-500 hover:text-violet-700 transition-all cursor-pointer">查看</button>
-              <button onClick={() => handleDelete(r.id)} className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 hover:text-red-500 transition-all cursor-pointer">删除</button>
+              <button onClick={() => onLoad(r.content, r.id)} className="text-xs text-violet-500 hover:text-violet-700 transition-colors cursor-pointer shrink-0">查看</button>
+              <button onClick={() => handleDelete(r.id)} className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 hover:text-red-500 transition-all cursor-pointer shrink-0">删除</button>
             </div>
           ))}
+        </div>
+      )}
+
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+          <span className="text-xs text-gray-400">共 {total} 条</span>
+          <div className="flex items-center gap-1">
+            <button disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); load(p) }}
+              className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">上一页</button>
+            <span className="text-xs text-gray-400 px-2">{page} / {totalPages}</span>
+            <button disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); load(p) }}
+              className="px-2.5 py-1 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer">下一页</button>
+          </div>
         </div>
       )}
     </div>

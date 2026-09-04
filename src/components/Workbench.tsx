@@ -1,8 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, forwardRef, useImperativeHandle } from 'react'
 import type { ProviderId, ReportType, WorkItem, WorkItemType } from '@/types'
 import { generateReport } from '@/services/ai'
 import { createReport } from '@/services/reports'
+
+export interface WorkbenchHandle { regenerate: () => void; hasItems: () => boolean }
 
 interface Props {
   reportType: ReportType
@@ -10,7 +12,7 @@ interface Props {
   apiKey: string
   onGenerateStart: () => void
   onChunk: (text: string) => void
-  onGenerateEnd: () => void
+  onGenerateEnd: (content: string, reportId?: number) => void
   onNeedApiKey: () => void
 }
 
@@ -21,12 +23,17 @@ const CFG = {
   monthly: { label: '本月工作', desc: '记录你本月完成的工作事项', planLabel: '下月计划', planDesc: '下月打算做什么' },
 }
 
-export default function Workbench({ reportType, providerId, apiKey, onGenerateStart, onChunk, onGenerateEnd, onNeedApiKey }: Props) {
+const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ reportType, providerId, apiKey, onGenerateStart, onChunk, onGenerateEnd, onNeedApiKey }, ref) {
   const [items, setItems] = useState<WorkItem[]>([])
   const [plan, setPlan] = useState('')
   const [issues, setIssues] = useState('')
   const [summary, setSummary] = useState('')
   const cfg = CFG[reportType]
+
+  useImperativeHandle(ref, () => ({
+    regenerate: handleGenerate,
+    hasItems: () => items.some(it => it.text.trim()),
+  }))
 
   const addItem = () => setItems(prev => [...prev, { id: crypto.randomUUID(), text: '', type: '开发' }])
   const updateItem = (id: string, patch: Partial<WorkItem>) => setItems(prev => prev.map(it => it.id === id ? { ...it, ...patch } : it))
@@ -38,24 +45,29 @@ export default function Workbench({ reportType, providerId, apiKey, onGenerateSt
     if (filled.length === 0) return
 
     onGenerateStart()
+    let generated = ''
+    let reportId: number | undefined
     try {
       const dateStr = new Date().toISOString().slice(0, 10)
-      await generateReport(providerId, apiKey, reportType, filled.map(it => ({ text: it.text, type: it.type })), plan, issues, summary, dateStr, onChunk)
+      await generateReport(providerId, apiKey, reportType, filled.map(it => ({ text: it.text, type: it.type })), plan, issues, summary, dateStr, chunk => {
+        generated += chunk
+        onChunk(chunk)
+      })
 
-      // 自动保存到数据库
       const reportLabel = reportType === 'daily' ? '日报' : reportType === 'weekly' ? '周报' : '月报'
-      await createReport({
+      const saved = await createReport({
         type: reportType,
         title: `${reportLabel} · ${dateStr}`,
-        content: '', // 会在 Preview 组件保存时更新
+        content: generated,
         items: JSON.stringify(filled),
         plan, issues, summary,
         provider: providerId,
       })
+      reportId = saved.id
     } catch (e) {
       onChunk(`\n\n⚠️ 生成失败: ${(e as Error).message}`)
     } finally {
-      onGenerateEnd()
+      onGenerateEnd(generated, reportId)
     }
   }
 
@@ -150,4 +162,6 @@ export default function Workbench({ reportType, providerId, apiKey, onGenerateSt
       </div>
     </div>
   )
-}
+})
+
+export default Workbench
