@@ -133,7 +133,7 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
             <span className="text-lg">📋</span>
             <span className="text-base font-bold text-gray-900">{cfg.label}</span>
           </div>
-          <button onClick={addItem} className="flex items-center gap-1 text-sm text-violet-600 font-medium px-3 py-1.5 rounded-lg border border-violet-200 hover:bg-violet-50 transition-colors cursor-pointer">
+          <button onClick={addItem} className="flex items-center gap-1 text-sm text-teal-600 font-medium px-3 py-1.5 rounded-lg border border-teal-200 hover:bg-teal-50 transition-colors cursor-pointer">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             添加工作事项
           </button>
@@ -142,11 +142,11 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
 
         <div className="flex flex-col gap-2">
           {items.map((item, index) => (
-            <div key={item.id} className="flex items-center gap-2 py-2.5 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-violet-200 transition-colors">
+            <div key={item.id} className="flex items-center gap-2 py-2.5 px-3 bg-gray-50 rounded-xl border border-gray-100 group hover:border-teal-200 transition-colors">
               <div className="flex flex-col gap-0.5 cursor-grab opacity-30 px-1">
                 {[0,1,2].map(i => <div key={i} className="flex gap-0.5"><span className="w-[3px] h-[3px] rounded-full bg-gray-400"/><span className="w-[3px] h-[3px] rounded-full bg-gray-400"/></div>)}
               </div>
-              <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">{index + 1}</div>
+              <div className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs font-semibold flex items-center justify-center shrink-0">{index + 1}</div>
               <input type="text" value={item.text} onChange={e => updateItem(item.id, { text: e.target.value })} placeholder="做了什么…"
                 className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400" />
               <select value={item.type} onChange={e => updateItem(item.id, { type: e.target.value as WorkItemType })}
@@ -160,7 +160,7 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
           ))}
         </div>
         {items.length === 0 && (
-          <button onClick={addItem} className="w-full py-8 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-violet-200 hover:text-violet-500 hover:bg-violet-50 transition-colors cursor-pointer">
+          <button onClick={addItem} className="w-full py-8 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-teal-200 hover:text-teal-500 hover:bg-teal-50 transition-colors cursor-pointer">
             + 点击添加第一个工作事项
           </button>
         )}
@@ -173,7 +173,7 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
         <p className="text-xs text-gray-400 mb-3">{cfg.planDesc}</p>
         <div className="relative">
           <textarea value={plan} onChange={e => setPlan(e.target.value)} placeholder="继续进行用户模块测试，准备提测；跟进产品需求文档。" maxLength={500} rows={3}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100" />
           <span className="absolute bottom-2 right-3 text-xs text-gray-400">{plan.length}/500</span>
         </div>
       </div>
@@ -185,7 +185,7 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
         <p className="text-xs text-gray-400 mb-3">遇到的困难或需要帮助的地方</p>
         <div className="relative">
           <textarea value={issues} onChange={e => setIssues(e.target.value)} placeholder="暂无" maxLength={500} rows={3}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100" />
           <span className="absolute bottom-2 right-3 text-xs text-gray-400">{issues.length}/500</span>
         </div>
       </div>
@@ -197,7 +197,7 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
             <div className="flex items-center gap-2 mb-1"><span className="text-lg">📝</span><span className="text-base font-bold text-gray-900">本月总结（可选）</span></div>
             <p className="text-xs text-gray-400 mb-3">个人成长、流程改进建议</p>
             <textarea value={summary} onChange={e => setSummary(e.target.value)} placeholder="本月在技术能力和团队协作方面有哪些收获…" rows={3}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" />
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100" />
           </div>
         </>
       )}
@@ -205,13 +205,13 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
       <div className="mt-6 flex flex-col gap-2">
         <button onClick={handleGenerate} disabled={!hasContent}
           className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 50%, #6d28d9 100%)' }}>
+          style={{ background: 'linear-gradient(135deg, #5eead4 0%, #14b8a6 50%, #0d9488 100%)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           AI 生成{reportLabel}
         </button>
         {reportType !== 'daily' && (
           <button onClick={handleAggregate}
-            className="w-full py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 text-violet-600 border border-violet-200 hover:bg-violet-50 transition-colors cursor-pointer">
+            className="w-full py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 text-teal-600 border border-teal-200 hover:bg-teal-50 transition-colors cursor-pointer">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
             从近{reportType === 'weekly' ? '7天' : '30天'}日报汇总
           </button>

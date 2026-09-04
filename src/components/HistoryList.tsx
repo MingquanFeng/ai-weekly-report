@@ -5,10 +5,19 @@ import { listReports, deleteReport } from '@/services/reports'
 
 const PAGE_SIZE = 7
 
-const TYPE_ICONS: Record<string, React.ReactNode> = {
-  daily: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
-  weekly: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
-  monthly: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+const TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string }> = {
+  daily: {
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+    color: 'text-teal-600',
+  },
+  weekly: {
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+    color: 'text-blue-500',
+  },
+  monthly: {
+    icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+    color: 'text-amber-500',
+  },
 }
 
 export default function HistoryList({ refreshKey, onLoad }: { refreshKey: number; onLoad: (content: string, reportId: number) => void }) {
@@ -56,7 +65,7 @@ export default function HistoryList({ refreshKey, onLoad }: { refreshKey: number
         <div className="flex gap-1.5">
           {[{ v: '', l: '全部' }, { v: 'daily', l: '日报' }, { v: 'weekly', l: '周报' }, { v: 'monthly', l: '月报' }].map(f => (
             <button key={f.v} onClick={() => setFilter(f.v)}
-              className={`text-xs px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${filter === f.v ? 'bg-violet-100 text-violet-600 font-medium' : 'text-gray-400 hover:text-gray-600'}`}>
+              className={`text-xs px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${filter === f.v ? 'bg-teal-100 text-teal-600 font-medium' : 'text-gray-400 hover:text-gray-600'}`}>
               {f.l}
             </button>
           ))}
@@ -66,7 +75,7 @@ export default function HistoryList({ refreshKey, onLoad }: { refreshKey: number
       <div className="relative mb-3">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" value={search} onChange={e => handleSearch(e.target.value)} placeholder="搜索报告标题或内容…"
-          className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-colors" />
+          className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-colors" />
       </div>
 
       {loading ? (
@@ -76,12 +85,12 @@ export default function HistoryList({ refreshKey, onLoad }: { refreshKey: number
       ) : (
         <div className="flex flex-col gap-2 max-h-[400px] overflow-auto">
           {reports.map(r => {
-            const icon = TYPE_ICONS[r.type] || '📄'
+            const cfg = TYPE_CONFIG[r.type] || TYPE_CONFIG.daily
             return (
-              <div key={r.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-violet-50/60 group transition-colors">
-                <span className="text-violet-500 shrink-0">{icon}</span>
+              <div key={r.id} className="flex items-center gap-3 py-2.5 px-3 rounded-xl hover:bg-teal-50/60 group transition-colors">
+                <span className={cfg.color}>{cfg.icon}</span>
                 <span className="flex-1 text-xs text-gray-600 truncate">{(r.content || '').replace(/[#*\n]/g, ' ').slice(0, 60) || '无内容'}</span>
-                <button onClick={() => onLoad(r.content, r.id)} className="text-xs text-violet-600 hover:text-violet-700 font-medium transition-colors cursor-pointer shrink-0">查看</button>
+                <button onClick={() => onLoad(r.content, r.id)} className="text-xs text-teal-600 hover:text-teal-700 font-medium transition-colors cursor-pointer shrink-0">查看</button>
                 <button onClick={() => handleDelete(r.id)} className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 hover:text-red-500 transition-all cursor-pointer shrink-0">删除</button>
               </div>
             )

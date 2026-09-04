@@ -35,7 +35,7 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
         <div className="flex gap-1 mb-5 p-1 bg-gray-100 rounded-xl">
           {[{ key: 'provider' as const, label: '厂商配置' }, { key: 'template' as const, label: '自定义模板' }].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${activeTab === tab.key ? 'bg-white text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer ${activeTab === tab.key ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
               {tab.label}
             </button>
           ))}
@@ -48,7 +48,7 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
               <div className="grid grid-cols-3 gap-2 mb-4">
                 {PROVIDER_LIST.map(p => (
                   <button key={p.id} onClick={() => setProvider(p.id)}
-                    className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${provider === p.id ? 'bg-violet-50 border-violet-400 text-violet-600 shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-violet-200'}`}>
+                    className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl text-xs font-medium transition-all cursor-pointer border ${provider === p.id ? 'bg-teal-50 border-teal-400 text-teal-600 shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-teal-200'}`}>
                     <span className="text-lg">{p.icon}</span>
                     <span className="leading-tight">{p.name}</span>
                   </button>
@@ -56,7 +56,7 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
               </div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">{cp.name} API Key</label>
               <input type="password" value={currentKey} onChange={e => setKey(e.target.value)} placeholder={cp.placeholder}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 mb-2 transition-colors" />
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 mb-2 transition-colors" />
               <p className="text-xs text-gray-400 mb-1">模型：{cp.model}</p>
               <p className="text-xs text-gray-400">🔒 Key 仅存储在浏览器本地</p>
             </>
@@ -68,7 +68,7 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
               <div className="flex gap-1.5 mb-3">
                 {TABS.map(tab => (
                   <button key={tab.type} onClick={() => setTemplateType(tab.type)}
-                    className={`text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${templateType === tab.type ? 'bg-violet-100 text-violet-600 font-medium' : 'text-gray-400 hover:text-gray-600 bg-gray-50'}`}>
+                    className={`text-xs px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${templateType === tab.type ? 'bg-teal-100 text-teal-600 font-medium' : 'text-gray-400 hover:text-gray-600 bg-gray-50'}`}>
                     {tab.label}
                   </button>
                 ))}
@@ -77,7 +77,7 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
                 value={customPrompts[templateType] || ''}
                 onChange={e => setCustomPrompts(prev => ({ ...prev, [templateType]: e.target.value }))}
                 placeholder={SYSTEM_PROMPTS[templateType]}
-                className="w-full h-52 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-colors leading-relaxed"
+                className="w-full h-52 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 resize-none bg-gray-50 placeholder:text-gray-400 focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-colors leading-relaxed"
               />
               {customPrompts[templateType] && (
                 <button onClick={() => setCustomPrompts(prev => { const n = { ...prev }; delete n[templateType]; return n })}
@@ -91,7 +91,7 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
 
         <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-gray-100">
           <button onClick={onClose} className="px-5 py-2.5 text-sm font-medium rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer">取消</button>
-          <button onClick={handleSave} className="px-5 py-2.5 text-sm font-medium rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-colors cursor-pointer">保存</button>
+          <button onClick={handleSave} className="px-5 py-2.5 text-sm font-medium rounded-xl bg-teal-600 text-white hover:bg-teal-700 transition-colors cursor-pointer">保存</button>
         </div>
       </div>
     </div>

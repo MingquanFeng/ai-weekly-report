@@ -39,13 +39,13 @@ export default function Home() {
   const handleSave = (s: Settings) => { setSettings(s); localStorage.setItem('settings', JSON.stringify(s)); setShowSettings(false) }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8f7ff]">
+    <div className="min-h-screen flex flex-col bg-[#f4fdfb]">
       <Header onSettingsClick={() => setShowSettings(true)} hasApiKey={!!getApiKey(settings)} />
       <main className="flex-1 max-w-[1280px] w-full mx-auto px-6 py-5 flex flex-col gap-5">
         <div className="flex gap-3">
           {TABS.map(tab => (
             <button key={tab.type} onClick={() => setReportType(tab.type)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${reportType === tab.type ? 'bg-violet-600 text-white shadow-md shadow-violet-200' : 'bg-white text-gray-500 hover:bg-violet-50 border border-gray-200'}`}>
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all cursor-pointer ${reportType === tab.type ? 'bg-teal-600 text-white shadow-md shadow-teal-200' : 'bg-white text-gray-500 hover:bg-teal-50 border border-gray-200'}`}>
               <span className="text-base">{tab.icon}</span>{tab.label}
             </button>
           ))}
