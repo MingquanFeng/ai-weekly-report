@@ -4,26 +4,35 @@ import { getDb } from '@/lib/db'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const type = searchParams.get('type')
+  const q = searchParams.get('q')
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
   const page = Number(searchParams.get('page') || '1')
   const pageSize = Number(searchParams.get('pageSize') || '50')
   const offset = (page - 1) * pageSize
 
   const db = getDb()
   let sql = 'SELECT * FROM reports'
+  let countSql = 'SELECT COUNT(*) as total FROM reports'
+  const conditions: string[] = []
   const params: string[] = []
+  const countParams: string[] = []
 
-  if (type) {
-    sql += ' WHERE type = ?'
-    params.push(type)
+  if (type) { conditions.push('type = ?'); params.push(type); countParams.push(type) }
+  if (q) { conditions.push('(title LIKE ? OR content LIKE ?)'); const like = `%${q}%`; params.push(like, like); countParams.push(like, like) }
+  if (startDate) { conditions.push('created_at >= ?'); params.push(startDate); countParams.push(startDate) }
+  if (endDate) { conditions.push('created_at <= ?'); params.push(endDate + ' 23:59:59'); countParams.push(endDate + ' 23:59:59') }
+
+  if (conditions.length > 0) {
+    const where = ' WHERE ' + conditions.join(' AND ')
+    sql += where
+    countSql += where
   }
+
   sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
   params.push(String(pageSize), String(offset))
 
   const data = db.prepare(sql).all(...params)
-
-  let countSql = 'SELECT COUNT(*) as total FROM reports'
-  const countParams: string[] = []
-  if (type) { countSql += ' WHERE type = ?'; countParams.push(type) }
   const { total } = db.prepare(countSql).get(...countParams) as { total: number }
 
   return Response.json({ data, total, page, pageSize })

@@ -2,13 +2,20 @@
 import type { ProviderId, ReportType } from '@/types'
 import { PROVIDERS } from './providers'
 
-const SYSTEM_PROMPTS: Record<ReportType, string> = {
+export const SYSTEM_PROMPTS: Record<ReportType, string> = {
   daily: `你是一个专业的日报撰写助手。根据用户提供的零散工作记录，生成一份结构清晰、措辞专业的日报。
 输出格式要求：1. 保持 Markdown 格式 2. 标题格式：# 日报 — YYYY-MM-DD（周X）3. 按以下段落组织：## 今日完成、## 进行中、## 明日计划、## 遇到的问题（可省略）4. 语言专业但不生硬 5. 从零散输入中提取关键信息 6. 每个条目用列表形式呈现`,
   weekly: `你是一个专业的周报撰写助手。根据用户提供的零散工作记录，生成一份结构清晰、措辞专业的周报。
 输出格式要求：1. 保持 Markdown 格式 2. 标题格式：# 周报 — YYYY年第XX周 3. 按以下段落组织：## 本周完成、## 进行中、## 下周计划、## 风险与问题（可省略）4. 语言专业但不生硬 5. 从零散输入中提取关键信息 6. 每个条目用列表形式呈现`,
   monthly: `你是一个专业的月报撰写助手。根据用户提供的零散工作记录，生成一份结构清晰、措辞专业的月报。
 输出格式要求：1. 保持 Markdown 格式 2. 标题格式：# 月报 — YYYY年M月 3. 按以下段落组织：## 本月成果、## 重点项目进展、## 下月计划、## 风险与问题（可省略）、## 本月总结（可选）4. 语言专业但不生硬 5. 从零散输入中提取关键信息 6. 每个条目用列表形式呈现`,
+}
+
+export const AGGREGATION_PROMPTS: Partial<Record<ReportType, string>> = {
+  weekly: `你是一个专业的周报撰写助手。用户提供了本周每日的工作记录，请将其汇总为一份结构清晰、措辞专业的周报。
+要求：1. 保持 Markdown 格式 2. 标题格式：# 周报 — YYYY年第XX周 3. 去重合并相同工作事项，按重要性排序 4. 识别持续进行中的工作 5. 从每日记录中提炼关键成果 6. 按## 本周完成、## 进行中、## 下周计划、## 风险与问题（可省略）组织 7. 语言专业但不生硬`,
+  monthly: `你是一个专业的月报撰写助手。用户提供了本月每日的工作记录，请将其汇总为一份结构清晰、措辞专业的月报。
+要求：1. 保持 Markdown 格式 2. 标题格式：# 月报 — YYYY年M月 3. 去重合并相同工作事项，按项目或模块归类 4. 识别持续进行中的工作 5. 从每日记录中提炼关键成果和里程碑 6. 按## 本月成果、## 重点项目进展、## 下月计划、## 风险与问题（可省略）组织 7. 语言专业但不生硬`,
 }
 
 function buildUserMessage(items: { text: string; type: string }[], plan: string, issues: string, summary: string, reportType: ReportType, dateStr: string): string {
@@ -37,10 +44,12 @@ function extractContent(line: string): string | null {
 export async function generateReport(
   providerId: ProviderId, apiKey: string, reportType: ReportType,
   items: { text: string; type: string }[], plan: string, issues: string,
-  summary: string, dateStr: string, onChunk: (text: string) => void
+  summary: string, dateStr: string, onChunk: (text: string) => void,
+  customSystemPrompt?: string
 ): Promise<void> {
   const provider = PROVIDERS[providerId]
   const userMessage = buildUserMessage(items, plan, issues, summary, reportType, dateStr)
+  const systemPrompt = customSystemPrompt || SYSTEM_PROMPTS[reportType]
 
   const res = await fetch(`/api/ai/${providerId}`, {
     method: 'POST',
@@ -48,7 +57,7 @@ export async function generateReport(
     body: JSON.stringify({
       model: provider.model,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPTS[reportType] },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: userMessage },
       ],
       stream: true,

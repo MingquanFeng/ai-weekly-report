@@ -3,9 +3,12 @@ import type { Report } from '@/types'
 
 const BASE = '/api/reports'
 
-export async function listReports(type?: string, page = 1, pageSize = 20) {
+export async function listReports(type?: string, page = 1, pageSize = 20, startDate?: string, endDate?: string, q?: string) {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
   if (type) params.set('type', type)
+  if (startDate) params.set('startDate', startDate)
+  if (endDate) params.set('endDate', endDate)
+  if (q) params.set('q', q)
   const res = await fetch(`${BASE}?${params}`)
   return res.json() as Promise<{ data: Report[]; total: number; page: number; pageSize: number }>
 }

@@ -16,7 +16,7 @@ const TABS: { type: ReportType; icon: string; label: string }[] = [
   { type: 'monthly', icon: '📊', label: '月报' },
 ]
 
-const DEFAULT: Settings = { provider: 'deepseek', apiKey: '', apiKeys: {} }
+const DEFAULT: Settings = { provider: 'deepseek', apiKey: '', apiKeys: {}, customPrompts: {} }
 
 function loadSettings(): Settings {
   try { const r = localStorage.getItem('settings'); return r ? { ...DEFAULT, ...JSON.parse(r) } : DEFAULT } catch { return DEFAULT }
@@ -53,6 +53,7 @@ export default function Home() {
 
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-5 min-h-0">
           <Workbench ref={workbenchRef} reportType={reportType} providerId={settings.provider} apiKey={getApiKey(settings)}
+            customSystemPrompt={settings.customPrompts[reportType]}
             onGenerateStart={() => { setLoading(true); setGenerated('') }}
             onChunk={chunk => setGenerated(prev => prev + chunk)}
             onGenerateEnd={(content, id) => {
@@ -64,7 +65,7 @@ export default function Home() {
             onNeedApiKey={() => setShowSettings(true)} />
           <Preview content={generated} loading={loading} reportType={reportType}
             providerId={settings.provider} apiKey={getApiKey(settings)}
-            reportId={reportId}
+            reportId={reportId} customSystemPrompt={settings.customPrompts[reportType]}
             onContentChange={setGenerated}
             onRegenerate={async () => {
               if (workbenchRef.current?.hasItems()) {
@@ -77,7 +78,8 @@ export default function Home() {
               try {
                 await generateReport(settings.provider, getApiKey(settings), reportType,
                   [{ text: generated, type: '重新生成' }], '', '', '',
-                  new Date().toISOString().slice(0, 10), chunk => { result += chunk; setGenerated(result) })
+                  new Date().toISOString().slice(0, 10), chunk => { result += chunk; setGenerated(result) },
+                  settings.customPrompts[reportType])
                 if (result && reportId) await updateReport(reportId, { content: result })
               } catch (e) {
                 alert(`重新生成失败: ${(e as Error).message}`)

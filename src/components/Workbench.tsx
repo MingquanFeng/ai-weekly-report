@@ -1,8 +1,8 @@
 'use client'
 import { useState, forwardRef, useImperativeHandle } from 'react'
 import type { ProviderId, ReportType, WorkItem, WorkItemType } from '@/types'
-import { generateReport } from '@/services/ai'
-import { createReport } from '@/services/reports'
+import { generateReport, AGGREGATION_PROMPTS } from '@/services/ai'
+import { createReport, listReports } from '@/services/reports'
 
 export interface WorkbenchHandle { regenerate: () => void; hasItems: () => boolean }
 
@@ -10,6 +10,7 @@ interface Props {
   reportType: ReportType
   providerId: ProviderId
   apiKey: string
+  customSystemPrompt?: string
   onGenerateStart: () => void
   onChunk: (text: string) => void
   onGenerateEnd: (content: string, reportId?: number) => void
@@ -23,7 +24,7 @@ const CFG = {
   monthly: { label: '本月工作', desc: '记录你本月完成的工作事项', planLabel: '下月计划', planDesc: '下月打算做什么' },
 }
 
-const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ reportType, providerId, apiKey, onGenerateStart, onChunk, onGenerateEnd, onNeedApiKey }, ref) {
+const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ reportType, providerId, apiKey, customSystemPrompt, onGenerateStart, onChunk, onGenerateEnd, onNeedApiKey }, ref) {
   const [items, setItems] = useState<WorkItem[]>([])
   const [plan, setPlan] = useState('')
   const [issues, setIssues] = useState('')
@@ -52,7 +53,7 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
       await generateReport(providerId, apiKey, reportType, filled.map(it => ({ text: it.text, type: it.type })), plan, issues, summary, dateStr, chunk => {
         generated += chunk
         onChunk(chunk)
-      })
+      }, customSystemPrompt)
 
       const reportLabel = reportType === 'daily' ? '日报' : reportType === 'weekly' ? '周报' : '月报'
       const saved = await createReport({
@@ -66,6 +67,56 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
       reportId = saved.id
     } catch (e) {
       onChunk(`\n\n⚠️ 生成失败: ${(e as Error).message}`)
+    } finally {
+      onGenerateEnd(generated, reportId)
+    }
+  }
+
+  const handleAggregate = async () => {
+    if (!apiKey) { onNeedApiKey(); return }
+
+    const today = new Date()
+    const start = new Date(today)
+    if (reportType === 'weekly') start.setDate(today.getDate() - 7)
+    else start.setDate(today.getDate() - 30)
+
+    const startDate = start.toISOString().slice(0, 10)
+    const endDate = today.toISOString().slice(0, 10)
+
+    onGenerateStart()
+    let generated = ''
+    let reportId: number | undefined
+    try {
+      const res = await listReports('daily', 1, 100, startDate, endDate)
+      if (res.data.length === 0) {
+        onChunk('⚠️ 最近没有日报记录，请先生成日报')
+        onGenerateEnd('', undefined)
+        return
+      }
+
+      const dailyReports = res.data.reverse().map(r => {
+        const date = r.created_at?.slice(0, 10) || '未知日期'
+        return `### ${date}\n${r.content || '(无内容)'}`
+      }).join('\n\n')
+
+      const prompt = customSystemPrompt || AGGREGATION_PROMPTS[reportType]
+      const dateStr = today.toISOString().slice(0, 10)
+
+      await generateReport(providerId, apiKey, reportType,
+        [{ text: dailyReports, type: '历史日报汇总' }], '', '', '',
+        dateStr, chunk => { generated += chunk; onChunk(chunk) }, prompt)
+
+      const saved = await createReport({
+        type: reportType,
+        title: `${reportLabel} · ${dateStr}`,
+        content: generated,
+        items: JSON.stringify([{ id: 'agg', text: `从 ${res.data.length} 篇日报汇总`, type: '汇总' }]),
+        plan, issues, summary,
+        provider: providerId,
+      })
+      reportId = saved.id
+    } catch (e) {
+      onChunk(`\n\n⚠️ 汇总失败: ${(e as Error).message}`)
     } finally {
       onGenerateEnd(generated, reportId)
     }
@@ -151,14 +202,21 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
         </>
       )}
 
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col gap-2">
         <button onClick={handleGenerate} disabled={!hasContent}
           className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 text-white transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           style={{ background: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 50%, #6d28d9 100%)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
           AI 生成{reportLabel}
         </button>
-        <p className="text-center text-xs text-gray-400 mt-2.5">AI 会自动整理工作内容，提炼成果并优化表达</p>
+        {reportType !== 'daily' && (
+          <button onClick={handleAggregate}
+            className="w-full py-3 rounded-xl text-sm font-medium flex items-center justify-center gap-2 text-violet-600 border border-violet-200 hover:bg-violet-50 transition-colors cursor-pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/></svg>
+            从近{reportType === 'weekly' ? '7天' : '30天'}日报汇总
+          </button>
+        )}
+        <p className="text-center text-xs text-gray-400">AI 会自动整理工作内容，提炼成果并优化表达</p>
       </div>
     </div>
   )

@@ -11,11 +11,12 @@ interface Props {
   providerId: ProviderId
   apiKey: string
   reportId: number | null
+  customSystemPrompt?: string
   onContentChange: (content: string) => void
   onRegenerate: () => void
 }
 
-export default function Preview({ content, loading, reportType, providerId, apiKey, reportId, onContentChange, onRegenerate }: Props) {
+export default function Preview({ content, loading, reportType, providerId, apiKey, reportId, customSystemPrompt, onContentChange, onRegenerate }: Props) {
   const [copied, setCopied] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState('')
@@ -39,7 +40,7 @@ export default function Preview({ content, loading, reportType, providerId, apiK
     setOptimizing(true)
     let optimized = ''
     try {
-      await generateReport(providerId, apiKey, reportType, [{ text: content, type: '优化' }], '', '', '', new Date().toISOString().slice(0, 10), chunk => { optimized += chunk })
+      await generateReport(providerId, apiKey, reportType, [{ text: content, type: '优化' }], '', '', '', new Date().toISOString().slice(0, 10), chunk => { optimized += chunk }, customSystemPrompt)
       if (optimized) {
         onContentChange(optimized)
         if (reportId) await updateReport(reportId, { content: optimized })
