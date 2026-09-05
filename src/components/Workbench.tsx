@@ -36,7 +36,11 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
     hasItems: () => items.some(it => it.text.trim()),
   }))
 
-  const addItem = () => setItems(prev => [...prev, { id: crypto.randomUUID(), text: '', type: '开发' }])
+  const genId = () =>
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const addItem = () => setItems(prev => [...prev, { id: genId(), text: '', type: '开发' }])
   const updateItem = (id: string, patch: Partial<WorkItem>) => setItems(prev => prev.map(it => it.id === id ? { ...it, ...patch } : it))
   const removeItem = (id: string) => setItems(prev => prev.filter(it => it.id !== id))
 
