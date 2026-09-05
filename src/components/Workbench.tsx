@@ -29,7 +29,16 @@ const Workbench = forwardRef<WorkbenchHandle, Props>(function Workbench({ report
   const [plan, setPlan] = useState('')
   const [issues, setIssues] = useState('')
   const [summary, setSummary] = useState('')
+  const [prevType, setPrevType] = useState(reportType)
   const cfg = CFG[reportType]
+
+  if (prevType !== reportType) {
+    setPrevType(reportType)
+    setItems([])
+    setPlan('')
+    setIssues('')
+    setSummary('')
+  }
 
   useImperativeHandle(ref, () => ({
     regenerate: handleGenerate,
