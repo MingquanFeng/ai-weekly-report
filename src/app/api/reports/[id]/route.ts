@@ -17,9 +17,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  const userId = req.headers.get('x-user-id')
   const db = getDb()
   const existing = db.prepare('SELECT * FROM reports WHERE id = ?').get(id) as Record<string, unknown> | undefined
   if (!existing) return Response.json({ error: '不存在' }, { status: 404 })
+  if (userId && existing.user_id && existing.user_id !== Number(userId)) {
+    return Response.json({ error: '无权操作' }, { status: 403 })
+  }
 
   const body = await req.json()
   const { title, content, items, plan, issues, summary } = body
@@ -42,13 +46,17 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  const userId = req.headers.get('x-user-id')
   const db = getDb()
-  const existing = db.prepare('SELECT * FROM reports WHERE id = ?').get(id)
+  const existing = db.prepare('SELECT * FROM reports WHERE id = ?').get(id) as Record<string, unknown> | undefined
   if (!existing) return Response.json({ error: '不存在' }, { status: 404 })
+  if (userId && existing.user_id && existing.user_id !== Number(userId)) {
+    return Response.json({ error: '无权操作' }, { status: 403 })
+  }
   db.prepare('DELETE FROM reports WHERE id = ?').run(id)
   return Response.json({ success: true })
 }

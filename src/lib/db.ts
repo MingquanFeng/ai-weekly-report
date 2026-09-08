@@ -14,8 +14,16 @@ export function getDb(): Database.Database {
     db = new Database(DB_PATH)
     db.pragma('journal_mode = WAL')
     db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+      );
+
       CREATE TABLE IF NOT EXISTS reports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
         type TEXT NOT NULL CHECK(type IN ('daily','weekly','monthly')),
         title TEXT NOT NULL DEFAULT '',
         content TEXT NOT NULL DEFAULT '',
@@ -25,11 +33,20 @@ export function getDb(): Database.Database {
         summary TEXT NOT NULL DEFAULT '',
         provider TEXT NOT NULL DEFAULT 'deepseek',
         created_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
-        updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY (user_id) REFERENCES users(id)
       );
       CREATE INDEX IF NOT EXISTS idx_reports_type ON reports(type);
       CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at);
+      CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
     `)
+
+    // 兼容旧数据库：给 reports 表加 user_id 列（如果不存在）
+    const columns = db.prepare("PRAGMA table_info(reports)").all() as { name: string }[]
+    if (!columns.some(c => c.name === 'user_id')) {
+      db.exec('ALTER TABLE reports ADD COLUMN user_id INTEGER')
+      db.exec('CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id)')
+    }
   }
   return db
 }

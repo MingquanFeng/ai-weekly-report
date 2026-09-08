@@ -26,6 +26,8 @@ export interface Settings {
   apiKey: string
   apiKeys: Partial<Record<ProviderId, string>>
   customPrompts: Partial<Record<ReportType, string>>
+  userId: number | null
+  username: string
 }
 
 export interface Report {

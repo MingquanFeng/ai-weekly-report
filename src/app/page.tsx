@@ -1,11 +1,12 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ReportType, Settings } from '@/types'
 import Header from '@/components/Header'
 import Workbench from '@/components/Workbench'
 import type { WorkbenchHandle } from '@/components/Workbench'
 import Preview from '@/components/Preview'
 import SettingsModal from '@/components/SettingsModal'
+import LoginModal from '@/components/LoginModal'
 import HistoryList from '@/components/HistoryList'
 import { generateReport } from '@/services/ai'
 import { updateReport } from '@/services/reports'
@@ -16,7 +17,7 @@ const TABS: { type: ReportType; icon: string; label: string }[] = [
   { type: 'monthly', icon: '📊', label: '月报' },
 ]
 
-const DEFAULT: Settings = { provider: 'deepseek', apiKey: '', apiKeys: {}, customPrompts: {} }
+const DEFAULT: Settings = { provider: 'deepseek', apiKey: '', apiKeys: {}, customPrompts: {}, userId: null, username: '' }
 
 function loadSettings(): Settings {
   try { const r = localStorage.getItem('settings'); return r ? { ...DEFAULT, ...JSON.parse(r) } : DEFAULT } catch { return DEFAULT }
@@ -29,18 +30,41 @@ function getApiKey(s: Settings): string {
 export default function Home() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [showSettings, setShowSettings] = useState(false)
+  const [showLogin, setShowLogin] = useState(true)
   const [reportType, setReportType] = useState<ReportType>('daily')
   const [generated, setGenerated] = useState('')
   const [reportId, setReportId] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const workbenchRef = useRef<WorkbenchHandle>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    if (settings.userId) setShowLogin(false)
+  }, [])
 
   const handleSave = (s: Settings) => { setSettings(s); localStorage.setItem('settings', JSON.stringify(s)); setShowSettings(false) }
 
+  const handleLogin = (userId: number, username: string) => {
+    const s = { ...settings, userId, username }
+    setSettings(s)
+    localStorage.setItem('settings', JSON.stringify(s))
+    setShowLogin(false)
+    setRefreshKey(k => k + 1)
+  }
+
+  const handleLogout = () => {
+    const s = { ...settings, userId: null, username: '' }
+    setSettings(s)
+    localStorage.setItem('settings', JSON.stringify(s))
+    setShowLogin(true)
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#f4fdfb]">
-      <Header onSettingsClick={() => setShowSettings(true)} hasApiKey={!!getApiKey(settings)} />
+    <div className="min-h-screen flex flex-col bg-[#f4fdfb]" suppressHydrationWarning>
+      <Header onSettingsClick={() => setShowSettings(true)} hasApiKey={!!getApiKey(settings)}
+        username={mounted ? settings.username : ''} onLogout={handleLogout} />
       <main className="flex-1 max-w-[1280px] w-full mx-auto px-6 py-5 flex flex-col gap-5">
         <div className="flex gap-3">
           {TABS.map(tab => (
@@ -94,6 +118,7 @@ export default function Home() {
       </main>
 
       {showSettings && <SettingsModal current={settings} onSave={handleSave} onClose={() => setShowSettings(false)} />}
+      {showLogin && <LoginModal onLogin={handleLogin} />}
     </div>
   )
 }

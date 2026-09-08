@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   const q = searchParams.get('q')
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
+  const userId = searchParams.get('userId')
   const page = Number(searchParams.get('page') || '1')
   const pageSize = Number(searchParams.get('pageSize') || '50')
   const offset = (page - 1) * pageSize
@@ -18,6 +19,7 @@ export async function GET(req: NextRequest) {
   const params: string[] = []
   const countParams: string[] = []
 
+  if (userId) { conditions.push('user_id = ?'); params.push(userId); countParams.push(userId) }
   if (type) { conditions.push('type = ?'); params.push(type); countParams.push(type) }
   if (q) { conditions.push('(title LIKE ? OR content LIKE ?)'); const like = `%${q}%`; params.push(like, like); countParams.push(like, like) }
   if (startDate) { conditions.push('created_at >= ?'); params.push(startDate); countParams.push(startDate) }
@@ -40,14 +42,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
-  const { type, title, content, items, plan, issues, summary, provider } = body
+  const { type, title, content, items, plan, issues, summary, provider, userId } = body
 
   const db = getDb()
   const result = db.prepare(`
-    INSERT INTO reports (type, title, content, items, plan, issues, summary, provider)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO reports (user_id, type, title, content, items, plan, issues, summary, provider)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    type || 'daily', title || '', content || '',
+    userId || null, type || 'daily', title || '', content || '',
     JSON.stringify(items || []), plan || '', issues || '',
     summary || '', provider || 'deepseek'
   )

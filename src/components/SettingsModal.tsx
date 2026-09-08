@@ -24,7 +24,14 @@ export default function SettingsModal({ current, onSave, onClose }: { current: S
   const setKey = (key: string) => setApiKeys(prev => ({ ...prev, [provider]: key }))
 
   const handleSave = () => {
-    onSave({ provider, apiKey: apiKeys[provider] || '', apiKeys, customPrompts })
+    onSave({
+      provider,
+      apiKey: apiKeys[provider] || '',
+      apiKeys,
+      customPrompts,
+      userId: current.userId,
+      username: current.username,
+    })
   }
 
   return (
