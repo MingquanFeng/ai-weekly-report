@@ -45,11 +45,40 @@ export async function POST(req: NextRequest) {
   const { type, title, content, items, plan, issues, summary, provider, userId } = body
 
   const db = getDb()
+  const reportType = type || 'daily'
+
+  // 查找同类型同周期的已有报告（覆盖写入）
+  let periodCondition = ''
+  if (reportType === 'daily') {
+    periodCondition = "date(created_at) = date('now', 'localtime')"
+  } else if (reportType === 'weekly') {
+    periodCondition = "strftime('%Y-W%W', created_at) = strftime('%Y-W%W', 'now', 'localtime')"
+  } else if (reportType === 'monthly') {
+    periodCondition = "strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', 'localtime')"
+  }
+
+  const existing = db.prepare(
+    `SELECT id FROM reports WHERE type = ? AND ${periodCondition} ${userId ? 'AND user_id = ?' : 'AND user_id IS NULL'}`
+  ).get(...[reportType, ...(userId ? [userId] : [])]) as { id: number } | undefined
+
+  if (existing) {
+    db.prepare(`
+      UPDATE reports SET title=?, content=?, items=?, plan=?, issues=?, summary=?, provider=?,
+      updated_at=datetime('now','localtime') WHERE id=?
+    `).run(
+      title || '', content || '', JSON.stringify(items || []),
+      plan || '', issues || '', summary || '', provider || 'deepseek',
+      existing.id
+    )
+    const row = db.prepare('SELECT * FROM reports WHERE id = ?').get(existing.id)
+    return Response.json(row)
+  }
+
   const result = db.prepare(`
     INSERT INTO reports (user_id, type, title, content, items, plan, issues, summary, provider)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    userId || null, type || 'daily', title || '', content || '',
+    userId || null, reportType, title || '', content || '',
     JSON.stringify(items || []), plan || '', issues || '',
     summary || '', provider || 'deepseek'
   )
