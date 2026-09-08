@@ -118,7 +118,7 @@ export default function Home() {
       </main>
 
       {showSettings && <SettingsModal current={settings} onSave={handleSave} onClose={() => setShowSettings(false)} />}
-      {showLogin && <LoginModal onLogin={handleLogin} />}
+      {mounted && showLogin && <LoginModal onLogin={handleLogin} />}
     </div>
   )
 }
